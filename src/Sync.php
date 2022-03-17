@@ -63,38 +63,40 @@ final class Sync
     
     $files = scandir($this->path);
 
-    if ($files) {
-      foreach ($files as $filename) {
-        // Ignore hidden files.
-        if ($filename[0] === '.') {
-          continue;
-        }
+    if (!$files) {
+      return $json_files;
+    }
 
-        // Ignore sub directories.
-        $file = untrailingslashit($this->path) . '/' . $filename;
-        if (is_dir($file)) {
-          continue;
-        }
-
-        // Ignore non JSON files.
-        $ext = pathinfo($filename, PATHINFO_EXTENSION);
-        if ($ext !== 'json') {
-          continue;
-        }
-
-        if (!is_readable($file)) {
-          die("Cannot read Custom Post Type UI JSON file.");
-        }
-
-        // Read JSON data.
-        $json = json_decode(file_get_contents($file), true);
-        if (!is_array($json) || !$json['type']) {
-          continue;
-        }
-
-        // Append data.
-        $json_files[$json['type']] = $file;
+    foreach ($files as $filename) {
+      // Ignore hidden files.
+      if ($filename[0] === '.') {
+        continue;
       }
+
+      // Ignore sub directories.
+      $file = untrailingslashit($this->path) . '/' . $filename;
+      if (is_dir($file)) {
+        continue;
+      }
+
+      // Ignore non JSON files.
+      $ext = pathinfo($filename, PATHINFO_EXTENSION);
+      if ($ext !== 'json') {
+        continue;
+      }
+
+      if (!is_readable($file)) {
+        die("Cannot read Custom Post Type UI JSON file.");
+      }
+
+      // Read JSON data.
+      $json = json_decode(file_get_contents($file), true);
+      if (!is_array($json) || !$json['type']) {
+        continue;
+      }
+
+      // Append data.
+      $json_files[$json['type']] = $file;
     }
 
     return $json_files;
