@@ -1,0 +1,12 @@
+{
+  "name": "hc/custom-post-type-ui-sync",
+  "description": "Custom Post Type UI JSON syncing for version control.",
+  "type": "wordpress-plugin",
+  "license": "gpl-2.0-or-later",
+  "autoload": {
+    "psr-4": {
+      "HC\\CustomPostTypeUiSync\\": "src/"
+    }
+  },
+  "require": {}
+}
