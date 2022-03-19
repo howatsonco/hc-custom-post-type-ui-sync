@@ -25,7 +25,7 @@ final class Sync
    */
   public function __construct()
   {
-    $this->path = get_stylesheet_directory() . "/cptui-json";
+    $this->path = apply_filters('hccptuis_path', get_stylesheet_directory() . "/cptui-json");
     $this->dependencies();
     $this->register_hooks();
   }
@@ -57,44 +57,46 @@ final class Sync
   public function scan()
   {
     $json_files = array();
+    if (!is_dir($this->path)) {
+      return $json_files;
+    }
+    
+    $files = scandir($this->path);
 
-    if (is_dir($this->path)) {
-      $files = scandir($this->path);
+    if (!$files) {
+      return $json_files;
+    }
 
-      if ($files) {
-        foreach ($files as $filename) {
-
-          // Ignore hidden files.
-          if ($filename[0] === '.') {
-            continue;
-          }
-
-          // Ignore sub directories.
-          $file = untrailingslashit($this->path) . '/' . $filename;
-          if (is_dir($file)) {
-            continue;
-          }
-
-          // Ignore non JSON files.
-          $ext = pathinfo($filename, PATHINFO_EXTENSION);
-          if ($ext !== 'json') {
-            continue;
-          }
-
-          if (!is_readable($file)) {
-            die("Cannot read Custom Post Type UI JSON file.");
-          }
-
-          // Read JSON data.
-          $json = json_decode(file_get_contents($file), true);
-          if (!is_array($json) || !$json['type']) {
-            continue;
-          }
-
-          // Append data.
-          $json_files[$json['type']] = $file;
-        }
+    foreach ($files as $filename) {
+      // Ignore hidden files.
+      if ($filename[0] === '.') {
+        continue;
       }
+
+      // Ignore sub directories.
+      $file = untrailingslashit($this->path) . '/' . $filename;
+      if (is_dir($file)) {
+        continue;
+      }
+
+      // Ignore non JSON files.
+      $ext = pathinfo($filename, PATHINFO_EXTENSION);
+      if ($ext !== 'json') {
+        continue;
+      }
+
+      if (!is_readable($file)) {
+        die("Cannot read Custom Post Type UI JSON file.");
+      }
+
+      // Read JSON data.
+      $json = json_decode(file_get_contents($file), true);
+      if (!is_array($json) || !$json['type']) {
+        continue;
+      }
+
+      // Append data.
+      $json_files[$json['type']] = $file;
     }
 
     return $json_files;
@@ -105,7 +107,8 @@ final class Sync
    */
   public function save($file, $data)
   {
-    $result = file_put_contents($file, wp_json_encode($data, JSON_PRETTY_PRINT));
+    $d = apply_filters('hccptuis_before_save', $data);
+    $result = file_put_contents($file, wp_json_encode($d, JSON_PRETTY_PRINT));
     return is_int($result);
   }
 
@@ -129,8 +132,11 @@ final class Sync
     foreach ($files as $type => $file) {
       $json = json_decode(file_get_contents($file), true);
 
-      if (!empty($json) && isset($json) && $json['data']) {
-        $payload[$type] = $json['data'];
+      if (!empty($json) && isset($json) &&
+        isset($json['data']) && $json['data'] &&
+        isset($json['type']) && $json['type']) {
+        $d = apply_filters('hccptuis_before_import', $json);
+        $payload[$type] = $d['data'];
       }
     }
 
